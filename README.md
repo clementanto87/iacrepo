@@ -64,6 +64,12 @@ Inputs (optional):
 - `resource_group`
 - `template_file`
 
+## Bicep Scaffolding
+
+Starter templates are in `infra/`:
+- `infra/main.bicep`
+- `infra/modules/*`
+
 ## Local Azure ARM API (Server)
 
 There is a small API server under `server/` that proxies Azure ARM data for the UI.
