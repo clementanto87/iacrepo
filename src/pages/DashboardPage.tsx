@@ -25,10 +25,31 @@ export function DashboardPage() {
   const { data, loading, error } = useDashboardData(environment)
   const [actionStatus, setActionStatus] = useState<string | null>(null)
   const [actionBusy, setActionBusy] = useState(false)
+  const [showProdConfirm, setShowProdConfirm] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [useGeneratedParams, setUseGeneratedParams] = useState(true)
   const [deployConfig, setDeployConfig] = useState({
     resourceGroup: '',
     templateFile: '',
+    parametersFile: '',
+    namePrefix: 'omh',
+    autoscaleMaxThroughput: 4000,
   })
+
+  const generatedParametersJson = JSON.stringify(
+    {
+      $schema:
+        'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#',
+      contentVersion: '1.0.0.0',
+      parameters: {
+        environment: { value: environment },
+        namePrefix: { value: deployConfig.namePrefix || 'omh' },
+        autoscaleMaxThroughput: { value: deployConfig.autoscaleMaxThroughput || 4000 },
+      },
+    },
+    null,
+    2,
+  )
 
   function buildWorkflowInputs() {
     const inputs: Record<string, string> = {}
@@ -37,6 +58,12 @@ export function DashboardPage() {
     }
     if (deployConfig.templateFile.trim()) {
       inputs.template_file = deployConfig.templateFile.trim()
+    }
+    if (deployConfig.parametersFile.trim()) {
+      inputs.parameters_file = deployConfig.parametersFile.trim()
+    }
+    if (useGeneratedParams) {
+      inputs.parameters_json = generatedParametersJson
     }
     return inputs
   }
@@ -176,9 +203,20 @@ export function DashboardPage() {
                 placeholder="infra/main.bicep"
               />
             </label>
+            <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Parameters File
+              <input
+                value={deployConfig.parametersFile}
+                onChange={(event) =>
+                  setDeployConfig((current) => ({ ...current, parametersFile: event.target.value }))
+                }
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                placeholder="infra/parameters/dev.json"
+              />
+            </label>
           </div>
           <button
-            onClick={handlePromotion}
+            onClick={() => setShowProdConfirm(true)}
             disabled={actionBusy}
             className="mt-5 w-full rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-soft"
           >
@@ -233,6 +271,32 @@ export function DashboardPage() {
             </p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                Name Prefix
+                <input
+                  value={deployConfig.namePrefix}
+                  onChange={(event) =>
+                    setDeployConfig((current) => ({ ...current, namePrefix: event.target.value }))
+                  }
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  placeholder="omh"
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                Autoscale Max Throughput
+                <input
+                  type="number"
+                  value={deployConfig.autoscaleMaxThroughput}
+                  onChange={(event) =>
+                    setDeployConfig((current) => ({
+                      ...current,
+                      autoscaleMaxThroughput: Number(event.target.value || 0),
+                    }))
+                  }
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  placeholder="4000"
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                 Resource Group
                 <input
                   value={deployConfig.resourceGroup}
@@ -254,7 +318,37 @@ export function DashboardPage() {
                   placeholder="infra/main.bicep"
                 />
               </label>
+              <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                Parameters File (optional)
+                <input
+                  value={deployConfig.parametersFile}
+                  onChange={(event) =>
+                    setDeployConfig((current) => ({ ...current, parametersFile: event.target.value }))
+                  }
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  placeholder="infra/parameters/dev.json"
+                />
+              </label>
             </div>
+            <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm text-slate-600">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={useGeneratedParams}
+                  onChange={(event) => setUseGeneratedParams(event.target.checked)}
+                />
+                Auto-generate parameters JSON
+              </label>
+              <span className="text-xs text-slate-400">Sent with workflow dispatch</span>
+            </div>
+            {useGeneratedParams ? (
+              <div className="mt-4 rounded-xl border border-slate-100 bg-slate-900/95 p-4 text-xs text-slate-200">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Generated Parameters</p>
+                <pre className="mt-3 overflow-x-auto font-mono text-xs leading-relaxed text-slate-100">
+{generatedParametersJson}
+                </pre>
+              </div>
+            ) : null}
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
             <button
@@ -417,6 +511,46 @@ export function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {showProdConfirm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4">
+          <div className="card w-full max-w-lg px-6 py-5">
+            <h3 className="text-xl font-semibold text-navy">Confirm Production Deployment</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              This will dispatch the production workflow. Type <strong>CONFIRM</strong> to proceed.
+            </p>
+            <input
+              value={confirmText}
+              onChange={(event) => setConfirmText(event.target.value)}
+              className="mt-4 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+              placeholder="CONFIRM"
+            />
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowProdConfirm(false)
+                  setConfirmText('')
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (confirmText !== 'CONFIRM') return
+                  setShowProdConfirm(false)
+                  setConfirmText('')
+                  await handlePromotion()
+                }}
+                disabled={confirmText !== 'CONFIRM' || actionBusy}
+                className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white"
+              >
+                {actionBusy ? 'Dispatching…' : 'Deploy to Prod'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   )
 }

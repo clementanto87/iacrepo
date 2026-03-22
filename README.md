@@ -63,12 +63,16 @@ Two workflows are provided:
 Inputs (optional):
 - `resource_group`
 - `template_file`
+- `parameters_file`
+- `parameters_json`
 
 ## Bicep Scaffolding
 
 Starter templates are in `infra/`:
 - `infra/main.bicep`
 - `infra/modules/*`
+- `infra/parameters/dev.json`
+- `infra/parameters/prod.json`
 
 ## Local Azure ARM API (Server)
 

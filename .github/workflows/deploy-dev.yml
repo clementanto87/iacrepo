@@ -23,6 +23,9 @@ on:
       parameters_file:
         description: "Parameters file path (optional)"
         required: false
+      parameters_json:
+        description: "Inline parameters JSON (optional)"
+        required: false
 
 permissions:
   id-token: write
@@ -49,17 +52,25 @@ jobs:
       - name: What-if (optional)
         if: ${{ inputs.mode == 'what-if' && inputs.resource_group != '' && inputs.template_file != '' }}
         run: |
+          if [ -n "${{ inputs.parameters_json }}" ]; then
+            echo "${{ inputs.parameters_json }}" > /tmp/parameters.json
+          fi
           az deployment group what-if \
             --resource-group "${{ inputs.resource_group }}" \
             --template-file "${{ inputs.template_file }}" \
+            $( [ -n "${{ inputs.parameters_json }}" ] && echo "--parameters @/tmp/parameters.json" ) \
             $( [ -n "${{ inputs.parameters_file }}" ] && echo "--parameters @${{ inputs.parameters_file }}" )
 
       - name: Deploy (optional)
         if: ${{ inputs.mode == 'deploy' && inputs.resource_group != '' && inputs.template_file != '' }}
         run: |
+          if [ -n "${{ inputs.parameters_json }}" ]; then
+            echo "${{ inputs.parameters_json }}" > /tmp/parameters.json
+          fi
           az deployment group create \
             --resource-group "${{ inputs.resource_group }}" \
             --template-file "${{ inputs.template_file }}" \
+            $( [ -n "${{ inputs.parameters_json }}" ] && echo "--parameters @/tmp/parameters.json" ) \
             $( [ -n "${{ inputs.parameters_file }}" ] && echo "--parameters @${{ inputs.parameters_file }}" )
 
       - name: Summary
