@@ -28,6 +28,7 @@ export function DashboardPage() {
   const [showProdConfirm, setShowProdConfirm] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [useGeneratedParams, setUseGeneratedParams] = useState(true)
+  const [deployMode, setDeployMode] = useState<'what-if' | 'deploy'>('what-if')
   const [deployConfig, setDeployConfig] = useState({
     resourceGroup: '',
     templateFile: '',
@@ -72,8 +73,12 @@ export function DashboardPage() {
     setActionBusy(true)
     setActionStatus(null)
     try {
-      await triggerWorkflow('dev', 'main', { mode: 'what-if', environment, ...buildWorkflowInputs() })
-      setActionStatus('Dev what-if workflow dispatched.')
+      await triggerWorkflow('dev', 'main', {
+        mode: deployMode,
+        environment,
+        ...buildWorkflowInputs(),
+      })
+      setActionStatus(`Dev ${deployMode} workflow dispatched.`)
     } catch {
       setActionStatus('Failed to dispatch dev workflow.')
     } finally {
@@ -356,7 +361,7 @@ export function DashboardPage() {
               disabled={actionBusy}
               className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white"
             >
-              {actionBusy ? 'Dispatching…' : 'Trigger What-if'}
+              {actionBusy ? 'Dispatching…' : deployMode === 'deploy' ? 'Trigger Deploy' : 'Trigger What-if'}
             </button>
             <button className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600">
               Save Draft
@@ -378,6 +383,29 @@ export function DashboardPage() {
 }
 `}
             </pre>
+          </div>
+          <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Dev Workflow Mode
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDeployMode('what-if')}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  deployMode === 'what-if' ? 'bg-navy text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                What-if
+              </button>
+              <button
+                onClick={() => setDeployMode('deploy')}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  deployMode === 'deploy' ? 'bg-teal text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                Deploy
+              </button>
+            </div>
           </div>
         </div>
 
@@ -475,7 +503,14 @@ export function DashboardPage() {
               data.githubRuns.map((run) => (
                 <div key={run.id} className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-navy">{run.name ?? 'Workflow run'}</p>
+                    <a
+                      href={run.htmlUrl ?? '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-semibold text-navy underline-offset-4 hover:underline"
+                    >
+                      {run.name ?? 'Workflow run'}
+                    </a>
                     <p className="text-xs text-slate-400">
                       {run.branch ?? 'unknown'} · {run.event ?? 'manual'}
                     </p>
