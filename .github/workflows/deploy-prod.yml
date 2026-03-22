@@ -12,6 +12,9 @@ on:
       template_file:
         description: "Bicep file path (optional)"
         required: false
+      parameters_file:
+        description: "Parameters file path (optional)"
+        required: false
 
 permissions:
   id-token: write
@@ -41,7 +44,8 @@ jobs:
         run: |
           az deployment group create \
             --resource-group "${{ inputs.resource_group }}" \
-            --template-file "${{ inputs.template_file }}"
+            --template-file "${{ inputs.template_file }}" \
+            $( [ -n "${{ inputs.parameters_file }}" ] && echo "--parameters @${{ inputs.parameters_file }}" )
 
       - name: Summary
         run: |
