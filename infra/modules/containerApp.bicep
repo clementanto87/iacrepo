@@ -2,7 +2,6 @@ param environment string
 param location string
 param namePrefix string
 param identityResourceId string
-param registryResourceId string
 
 var appName = '${namePrefix}-app-${environment}'
 
@@ -45,7 +44,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-02-preview' = {
           name: appName
           image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           resources: {
-            cpu: 0.5
+            cpu: 1
             memory: '1Gi'
           }
         }

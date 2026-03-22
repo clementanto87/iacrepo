@@ -51,7 +51,6 @@ module containerApp './modules/containerApp.bicep' = {
     location: location
     namePrefix: namePrefix
     identityResourceId: managedIdentity.outputs.identityResourceId
-    registryResourceId: containerRegistry.outputs.registryResourceId
   }
   dependsOn: [
     managedIdentity

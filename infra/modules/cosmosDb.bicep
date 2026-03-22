@@ -25,8 +25,20 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
   }
 }
 
+resource sqlDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-11-15' = {
+  name: '${account.name}/default'
+  properties: {
+    resource: {
+      id: 'default'
+    }
+  }
+  dependsOn: [
+    account
+  ]
+}
+
 resource throughput 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/throughputSettings@2023-11-15' = {
-  name: '${account.name}/default/sqlDatabase/default'
+  name: '${account.name}/default/default'
   properties: {
     resource: {
       autoscaleSettings: {
@@ -35,7 +47,7 @@ resource throughput 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/throughp
     }
   }
   dependsOn: [
-    account
+    sqlDatabase
   ]
 }
 

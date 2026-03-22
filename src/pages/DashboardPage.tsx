@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Header } from '../components/Header'
 import { triggerWorkflow } from '../data/api'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { useResourceGroups } from '../hooks/useResourceGroups'
 
 const skeletonCard = 'animate-pulse rounded-xl border border-slate-100 bg-slate-50'
 
@@ -23,6 +24,7 @@ function statusBadge(status?: string | null, conclusion?: string | null) {
 export function DashboardPage() {
   const [environment, setEnvironment] = useState<'dev' | 'prod'>('dev')
   const { data, loading, error } = useDashboardData(environment)
+  const { groups: resourceGroups } = useResourceGroups()
   const [actionStatus, setActionStatus] = useState<string | null>(null)
   const [actionBusy, setActionBusy] = useState(false)
   const [showProdConfirm, setShowProdConfirm] = useState(false)
@@ -188,14 +190,20 @@ export function DashboardPage() {
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Resource Group
-              <input
+              <select
                 value={deployConfig.resourceGroup}
                 onChange={(event) =>
                   setDeployConfig((current) => ({ ...current, resourceGroup: event.target.value }))
                 }
                 className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-                placeholder="omh-dev-rg"
-              />
+              >
+                <option value="">Select resource group</option>
+                {resourceGroups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Template File
@@ -301,17 +309,23 @@ export function DashboardPage() {
                   placeholder="4000"
                 />
               </label>
-              <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Resource Group
-                <input
-                  value={deployConfig.resourceGroup}
-                  onChange={(event) =>
-                    setDeployConfig((current) => ({ ...current, resourceGroup: event.target.value }))
-                  }
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-                  placeholder="omh-dev-rg"
-                />
-              </label>
+            <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Resource Group
+              <select
+                value={deployConfig.resourceGroup}
+                onChange={(event) =>
+                  setDeployConfig((current) => ({ ...current, resourceGroup: event.target.value }))
+                }
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+              >
+                <option value="">Select resource group</option>
+                {resourceGroups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
+                ))}
+              </select>
+            </label>
               <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                 Template File
                 <input

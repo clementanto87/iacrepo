@@ -137,3 +137,9 @@ export async function triggerWorkflow(workflow: string, ref: string, inputs?: Re
     throw new Error('Dispatch failed')
   }
 }
+
+export async function fetchResourceGroups(): Promise<string[]> {
+  const groups = await safeFetchJson<{ groups: { name?: string }[] }>('/api/resource-groups')
+  if (!groups?.groups) return []
+  return groups.groups.map((group) => group.name).filter((name): name is string => Boolean(name))
+}
