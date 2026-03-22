@@ -1,0 +1,62 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Mode: what-if or deploy"
+        required: false
+        default: "what-if"
+      environment:
+        description: "Environment name"
+        required: false
+        default: "dev"
+      resource_group:
+        description: "Resource group name (optional)"
+        required: false
+      template_file:
+        description: "Bicep file path (optional)"
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Subscription
+        run: |
+          az account show --query "{name:name, id:id, user:user.name}" -o json
+
+      - name: What-if (optional)
+        if: ${{ inputs.mode == 'what-if' && inputs.resource_group != '' && inputs.template_file != '' }}
+        run: |
+          az deployment group what-if \
+            --resource-group "${{ inputs.resource_group }}" \
+            --template-file "${{ inputs.template_file }}"
+
+      - name: Deploy (optional)
+        if: ${{ inputs.mode == 'deploy' && inputs.resource_group != '' && inputs.template_file != '' }}
+        run: |
+          az deployment group create \
+            --resource-group "${{ inputs.resource_group }}" \
+            --template-file "${{ inputs.template_file }}"
+
+      - name: Summary
+        run: |
+          echo "Dev workflow completed."
